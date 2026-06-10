@@ -64,3 +64,232 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+---
+
+# Fomotoko Assessment
+> Fullstack Engineer Assessment Test - PT Fomo Inovasi Teknologi
+
+## Requirements
+- PHP >= 8.1
+- Composer
+- MySQL
+
+---
+
+## Task 1: Online Store API
+
+### Setup
+
+1. Install dependencies:
+```bash
+composer install
+```
+
+2. Copy environment file:
+```bash
+cp .env.example .env
+php artisan key:generate
+```
+
+3. Setup database di `.env`:
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=db_fomotoko
+DB_USERNAME=root
+DB_PASSWORD=
+```
+
+4. Buat database:
+```sql
+CREATE DATABASE db_fomotoko;
+```
+
+5. Jalankan migration:
+```bash
+php artisan migrate
+```
+
+6. Jalankan server:
+```bash
+php artisan serve
+```
+
+---
+
+### API Endpoints
+
+#### Products
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | /api/products | Get all products |
+| GET | /api/products/{id} | Get single product |
+| POST | /api/products | Create product |
+| PUT | /api/products/{id} | Update product |
+| DELETE | /api/products/{id} | Delete product |
+
+#### Orders
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | /api/orders | Get all orders |
+| GET | /api/orders/{id} | Get single order |
+| POST | /api/orders | Create order |
+
+---
+
+### Request & Response Examples
+
+#### Create Product
+**POST** `/api/products`
+```json
+{
+    "name": "Produk Flash Sale",
+    "description": "Produk untuk flash sale",
+    "price": 100000,
+    "flash_sale_price": 50000,
+    "stock": 10
+}
+```
+
+**Response 201:**
+```json
+{
+    "id": 1,
+    "name": "Produk Flash Sale",
+    "description": "Produk untuk flash sale",
+    "price": "100000.00",
+    "flash_sale_price": "50000.00",
+    "stock": 10,
+    "created_at": "2026-06-10T05:37:38.000000Z",
+    "updated_at": "2026-06-10T05:37:38.000000Z"
+}
+```
+
+#### Create Order
+**POST** `/api/orders`
+```json
+{
+    "customer_name": "Budi Santoso",
+    "items": [
+        {
+            "product_id": 1,
+            "quantity": 2
+        }
+    ]
+}
+```
+
+**Response 201:**
+```json
+{
+    "id": 1,
+    "customer_name": "Budi Santoso",
+    "status": "success",
+    "total_price": 100000,
+    "order_items": [
+        {
+            "id": 1,
+            "order_id": 1,
+            "product_id": 1,
+            "quantity": 2,
+            "price": "50000.00"
+        }
+    ]
+}
+```
+
+**Response 422 (stok habis):**
+```json
+{
+    "message": "Insufficient stock for product: Produk Flash Sale"
+}
+```
+
+---
+
+### Race Condition Handling
+
+API menggunakan **database-level locking** (`SELECT ... FOR UPDATE`) untuk mencegah race condition saat flash sale. Ketika banyak order dibuat secara bersamaan untuk produk yang sama, sistem memastikan:
+
+- Stok tidak akan menjadi negatif
+- Setiap transaksi diproses secara atomik
+- Order yang melebihi stok akan ditolak dengan response 422
+
+### Run Functional Test
+
+```bash
+php artisan test tests/Feature/RaceConditionTest.php
+```
+
+**Expected output:**
+```
+PASS  Tests\Feature\RaceConditionTest
+✓ race condition flash sale
+
+Tests:    1 passed (3 assertions)
+```
+
+---
+
+## Task 2: Hidden Item
+
+### Jalankan Program
+
+```bash
+php task2-hidden-item/hidden_item.php
+```
+
+### Grid Layout
+
+```
+########
+#......#
+#.###..#
+#...#.##
+#X#....#
+########
+```
+
+**Legend:**
+- `#` = obstacle (rintangan)
+- `.` = clear path (jalur bebas)
+- `X` = posisi awal pemain
+- `$` = probable item location
+
+### Input
+
+| Input | Keterangan |
+|-------|------------|
+| A | Jumlah langkah ke Utara (North) |
+| B | Jumlah langkah ke Timur (East) |
+| C | Jumlah langkah ke Selatan (South) |
+
+### Contoh Output
+
+```
+Enter A (steps North): 1
+Enter B (steps East): 2
+Enter C (steps South): 1
+
+Grid:
+########
+#......#
+#.###..#
+#...#.##
+#X#....#
+########
+
+Probable coordinates (row, col):
+  -> row=4, col=3
+
+Grid with probable locations ($):
+########
+#......#
+#.###..#
+#...#.##
+#X#$...#
+########
+
+Legend: # obstacle  . clear path  X start  $ probable item
